@@ -1,0 +1,19 @@
+{
+  "name": "@heyagent/desktop",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-static.mjs",
+    "dev": "npm run build && electron .",
+    "start": "electron ."
+  },
+  "dependencies": {
+    "@heyagent/shared": "*"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@heyagent/cli",
+  "version": "0.3.0",
+  "type": "module",
+  "bin": {
+    "hey": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@heyagent/shared": "*",
+    "@heyagent/identity": "*",
+    "@heyagent/models": "*",
+    "@heyagent/agent": "*",
+    "@heyagent/integrations": "*",
+    "@heyagent/gateway": "*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

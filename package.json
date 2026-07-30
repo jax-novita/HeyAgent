@@ -1,0 +1,27 @@
+{
+  "name": "heyagent",
+  "version": "0.3.0",
+  "private": true,
+  "description": "HeyAgent — cross-platform local AI agent for your whole computer",
+  "license": "AGPL-3.0-only",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @heyagent/shared && npm run build -w @heyagent/identity -w @heyagent/models -w @heyagent/policy -w @heyagent/computer -w @heyagent/orchestrator && npm run build -w @heyagent/integrations && npm run build -w @heyagent/agent && npm run build -w @heyagent/channels-telegram -w @heyagent/gateway -w @heyagent/cli -w @heyagent/desktop",
+    "dev": "npm run dev -w @heyagent/gateway",
+    "dev:cli": "npm run dev -w @heyagent/cli",
+    "dev:desktop": "npm run dev -w @heyagent/desktop",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint \"{apps,packages}/**/*.ts\" --max-warnings=0",
+    "hey": "node apps/cli/dist/index.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "typescript-eslint": "^8.65.0"
+  }
+}

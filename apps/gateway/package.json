@@ -1,0 +1,38 @@
+{
+  "name": "@heyagent/gateway",
+  "version": "0.3.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "heyagent-gateway": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "node --import tsx --test src/**/*.test.ts"
+  },
+  "dependencies": {
+    "@heyagent/shared": "*",
+    "@heyagent/agent": "*",
+    "@heyagent/computer": "*",
+    "@heyagent/orchestrator": "*",
+    "@heyagent/identity": "*",
+    "@heyagent/channels-telegram": "*",
+    "@heyagent/integrations": "*",
+    "@heyagent/models": "*",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

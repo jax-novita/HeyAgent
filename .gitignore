@@ -1,0 +1,15 @@
+node_modules/
+.vendor/
+dist/
+build/
+out/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+coverage/
+.heyagent/
+heyagent-data/

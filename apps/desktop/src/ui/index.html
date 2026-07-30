@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HeyAgent</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <canvas id="avatar" class="avatar idle" width="64" height="64" aria-hidden="true"></canvas>
+      <h1 id="agent-name">HeyAgent</h1>
+      <p id="agent-status">Connecting…</p>
+    </header>
+
+    <section id="onboard" class="panel hidden">
+      <label for="locale-select" id="locale-label">Language / Язык</label>
+      <select id="locale-select">
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+      </select>
+      <h2 id="onboard-title">Name your agent</h2>
+      <input id="name-input" type="text" placeholder="Pixel" maxlength="24" />
+      <h3 id="avatar-title">Pick an avatar</h3>
+      <div id="avatar-grid" class="avatar-grid"></div>
+      <button id="onboard-btn" class="btn primary">Continue</button>
+    </section>
+
+    <section id="chat" class="panel">
+      <div id="messages" class="messages"></div>
+      <form id="chat-form" class="chat-form">
+        <input id="chat-input" type="text" placeholder="Ask anything…" autocomplete="off" />
+        <button id="chat-send" type="submit" class="btn">Send</button>
+      </form>
+    </section>
+
+    <nav class="tabs">
+      <button data-tab="chat" class="tab active">Chat</button>
+      <button data-tab="missions" class="tab">Missions</button>
+      <button data-tab="models" class="tab">Models</button>
+      <button data-tab="connect" class="tab">Connect</button>
+    </nav>
+
+    <section id="missions" class="panel hidden">
+      <h2>Missions</h2>
+      <div class="missions-actions">
+        <button id="missions-refresh" class="btn" type="button">Refresh</button>
+        <button id="missions-pause" class="btn" type="button">Pause</button>
+        <button id="missions-cancel" class="btn danger" type="button">Cancel all</button>
+      </div>
+      <pre id="missions-status" class="missions-pre"></pre>
+      <h3>Queue</h3>
+      <ul id="missions-queue" class="mission-list"></ul>
+      <h3>History</h3>
+      <ul id="missions-history" class="mission-list"></ul>
+      <div id="approvals-box" class="approvals hidden">
+        <h3>Safe preview</h3>
+        <div id="approvals-list"></div>
+      </div>
+    </section>
+
+    <section id="models-panel" class="panel hidden">
+      <h2>Models</h2>
+      <p>Configure via terminal: <code>hey models auth openai</code></p>
+      <button id="test-model" class="btn">Test connection</button>
+      <pre id="model-status"></pre>
+    </section>
+
+    <section id="connect" class="panel hidden">
+      <h2>Services</h2>
+      <ul id="integration-list" class="integration-list"></ul>
+      <p class="hint">Run <code>hey connect google</code> or <code>hey connect notion</code> in terminal.</p>
+    </section>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
