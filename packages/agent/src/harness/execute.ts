@@ -750,7 +750,7 @@ async function runMatched(
   }
 
   if (match.id === "google.sheets" || match.id === "google.slides") {
-    // Prefer tools via llm_loop with slots already set — fall through with null? 
+    // Prefer tools via llm_loop with slots already set — fall through with null?
     // Or execute directly:
     await addMessage(session, { role: "user", content: userMessage });
     options.onStatus?.("working", match.id);

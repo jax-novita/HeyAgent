@@ -8,7 +8,6 @@ export interface MemoryFact {
   value: string;
   updatedAt: string;
 }
-
 export interface RecentAction {
   tool: string;
   summary: string;

@@ -20,4 +20,3 @@ For «установи программу X»:
 5. If one manager fails, let the tool try available package managers; report the exact error.
 
 Do not merely download an installer and claim the app is installed.
-

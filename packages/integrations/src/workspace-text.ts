@@ -86,7 +86,6 @@ function script(value: string, table: Record<string, string>): string {
   const converted = [...value].map((char) => table[char] ?? char).join("");
   return converted;
 }
-
 function replaceFractions(value: string): string {
   let current = value;
   for (let pass = 0; pass < 6; pass += 1) {
@@ -142,4 +141,3 @@ export function plainWorkspaceText(value: string): string {
     .replace(/^\s*---+\s*$/gmu, "")
     .trim();
 }
-

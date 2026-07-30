@@ -40,7 +40,6 @@ test("system.control accepts a valid parsed command", () => {
     value: { action: "volume_set", level: 40 },
   });
 });
-
 test("system.control parser null is controlled and falls through without throwing", async () => {
   const statuses: { status: string; detail?: string }[] = [];
   const previousWarn = console.warn;
@@ -90,4 +89,3 @@ test("system.control rejects an object with missing or invalid action", async ()
     console.warn = previousWarn;
   }
 });
-

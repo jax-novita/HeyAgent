@@ -62,7 +62,6 @@ test("Sheets receives Unicode values plus native header/table formatting", async
   assert.match(formatted, /"bold":true/);
   assert.match(formatted, /autoResizeDimensions/);
 });
-
 test("Slides receives clean Unicode text and native slide typography", async () => {
   let batch = "";
   await withHub(
@@ -103,4 +102,3 @@ test("Slides receives clean Unicode text and native slide typography", async () 
   assert.match(batch, /createParagraphBullets/);
   assert.match(batch, /deleteObject/);
 });
-

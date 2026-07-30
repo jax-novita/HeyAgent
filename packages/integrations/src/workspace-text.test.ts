@@ -14,7 +14,6 @@ test("LaTeX-like quantum formulas become readable Unicode", () => {
     "Δ x · Δ p ≥ ℏ/2.",
   );
 });
-
 test("plain Workspace text removes Markdown, rules and math delimiters", () => {
   const text = plainWorkspaceText(
     "**Формула:** \\[ \\Delta x \\cdot \\Delta p \\geq \\frac{\\hbar}{2} \\]\n---",
@@ -22,4 +21,3 @@ test("plain Workspace text removes Markdown, rules and math delimiters", () => {
   assert.equal(text, "Формула: Δ x · Δ p ≥ ℏ/2");
   assert.doesNotMatch(text, /\\|\*\*|---|frac|cdot/);
 });
-
