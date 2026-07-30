@@ -1,46 +1,84 @@
 const GATEWAY = "http://127.0.0.1:28789";
+const LOCALE_KEY = "heyagent.locale";
 let productLocale = "ru";
+let gatewayStatus = null;
+let sessionId = null;
+let selectedAvatar = "sprite-04";
+let currentAvatar = "sprite-04";
+let avatarState = "idle";
+let avatarFrame = 0;
 
 const UI_TEXT = {
   en: {
-    onboardTitle: "Name your agent",
-    avatarTitle: "Pick an avatar",
-    continue: "Continue",
-    chatPlaceholder: "Ask anything…",
-    send: "Send",
-    enterName: "Enter a name",
-    terminalSetup: "Run in terminal to complete setup",
-    name: "Name",
-    avatar: "Avatar",
+    connecting: "Connecting…", online: "Online", offline: "Offline",
+    gatewayOffline: "Gateway offline — run: hey gateway start",
+    firstLaunch: "FIRST LAUNCH", onboardTitle: "Name your agent",
+    onboardCopy: "Create your personal assistant — you can change these settings later.",
+    agentName: "Agent name", avatarTitle: "Pick an avatar", continue: "Continue",
+    readyTitle: "Ready when you are", readyCopy: "Ask anything or delegate a task.",
+    chatPlaceholder: "Ask anything…", send: "Send", chat: "Chat",
+    automation: "AUTOMATION", missions: "Missions", refresh: "Refresh", pause: "Pause",
+    cancelAll: "Cancel all", queue: "Queue", history: "History", safePreview: "Safe preview",
+    intelligence: "INTELLIGENCE", models: "Models", configureTerminal: "Configure from the terminal:",
+    testConnection: "Test connection", workspace: "WORKSPACE", services: "Services",
+    connect: "Connect", connectCopy: "Connect Google Workspace, Notion and other services from the terminal.",
+    run: "Run:", or: "or", enterName: "Enter a name",
+    terminalSetup: "Run in terminal to complete setup", name: "Name", avatar: "Avatar",
+    model: "Model", activeUi: "Active UI", pendingApprovals: "Pending approvals",
+    cron: "Cron", none: "none", queueEmpty: "Queue empty", noHistory: "No history yet",
+    defaultModel: "Default", fallbacks: "Fallbacks", providers: "Providers",
+    error: "Error", approve: "Approve", deny: "Deny",
   },
   ru: {
-    onboardTitle: "Назовите агента",
-    avatarTitle: "Выберите аватар",
-    continue: "Продолжить",
-    chatPlaceholder: "Напишите запрос…",
-    send: "Отправить",
-    enterName: "Введите имя",
-    terminalSetup: "Завершите настройку в терминале",
-    name: "Имя",
-    avatar: "Аватар",
+    connecting: "Подключение…", online: "В сети", offline: "Не в сети",
+    gatewayOffline: "Шлюз не запущен — выполните: hey gateway start",
+    firstLaunch: "ПЕРВЫЙ ЗАПУСК", onboardTitle: "Назовите агента",
+    onboardCopy: "Создайте персонального помощника — настройки можно изменить позже.",
+    agentName: "Имя агента", avatarTitle: "Выберите аватар", continue: "Продолжить",
+    readyTitle: "Готов к работе", readyCopy: "Спросите что угодно или поручите задачу.",
+    chatPlaceholder: "Напишите запрос…", send: "Отправить", chat: "Чат",
+    automation: "АВТОМАТИЗАЦИЯ", missions: "Задачи", refresh: "Обновить", pause: "Пауза",
+    cancelAll: "Отменить все", queue: "Очередь", history: "История",
+    safePreview: "Безопасное подтверждение", intelligence: "ИНТЕЛЛЕКТ", models: "Модели",
+    configureTerminal: "Настройте через терминал:", testConnection: "Проверить подключение",
+    workspace: "РАБОЧЕЕ ПРОСТРАНСТВО", services: "Сервисы", connect: "Связи",
+    connectCopy: "Подключайте Google Workspace, Notion и другие сервисы из терминала.",
+    run: "Выполните:", or: "или", enterName: "Введите имя",
+    terminalSetup: "Завершите настройку в терминале", name: "Имя", avatar: "Аватар",
+    model: "Модель", activeUi: "Активный UI", pendingApprovals: "Ожидают подтверждения",
+    cron: "Расписание", none: "нет", queueEmpty: "Очередь пуста",
+    noHistory: "Истории пока нет", defaultModel: "По умолчанию",
+    fallbacks: "Резервные", providers: "Провайдеры", error: "Ошибка",
+    approve: "Разрешить", deny: "Отклонить",
   },
 };
 
-function uiText() {
-  return UI_TEXT[productLocale] || UI_TEXT.en;
+function t(key) {
+  return (UI_TEXT[productLocale] || UI_TEXT.en)[key] || key;
 }
 
-function applyProductLocale(locale) {
+function applyProductLocale(locale, persist = true) {
   productLocale = locale === "ru" ? "ru" : "en";
   document.documentElement.lang = productLocale;
-  const text = uiText();
-  document.getElementById("onboard-title").textContent = text.onboardTitle;
-  document.getElementById("avatar-title").textContent = text.avatarTitle;
-  document.getElementById("onboard-btn").textContent = text.continue;
-  document.getElementById("chat-input").placeholder = text.chatPlaceholder;
-  document.getElementById("chat-send").textContent = text.send;
-  const select = document.getElementById("locale-select");
-  if (select) select.value = productLocale;
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+  document.querySelectorAll("[data-locale]").forEach((button) => {
+    const active = button.dataset.locale === productLocale;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  if (persist) localStorage.setItem(LOCALE_KEY, productLocale);
+  renderGatewayStatus();
+  const active = document.querySelector(".tab.active")?.dataset.tab;
+  if (active === "missions") void refreshMissions();
+  if (active === "models") void refreshModels();
 }
 
 const AVATARS = [
@@ -78,38 +116,72 @@ function hexToRgb(hex) {
   return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
 }
 
-function shade([r, g, b], f) {
-  return [Math.min(255, Math.round(r * f)), Math.min(255, Math.round(g * f)), Math.min(255, Math.round(b * f))];
+function shade([r, g, b], factor) {
+  return [Math.min(255, Math.round(r * factor)), Math.min(255, Math.round(g * factor)), Math.min(255, Math.round(b * factor))];
 }
 
-function drawSprite(canvas, avatarId, color, scale = 6) {
+function drawSprite(canvas, avatarId, color, scale = 6, animated = false) {
   const grid = SPRITES[avatarId];
   if (!grid) return;
-  canvas.width = 8 * scale;
-  canvas.height = 8 * scale;
+  const margin = animated ? scale * 2 : 0;
+  canvas.width = 8 * scale + margin * 2;
+  canvas.height = 8 * scale + margin * 2;
   const ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const main = hexToRgb(color);
-  const palette = {
-    1: main,
-    2: shade(main, 0.45),
-    3: [20, 20, 28],
-    4: shade(main, 1.35),
-  };
+  const palette = { 1: main, 2: shade(main, 0.45), 3: [10, 13, 23], 4: shade(main, 1.35) };
+  const frame = avatarFrame % 4;
+  const frameX = animated && avatarState === "working" ? (frame % 2 ? scale : -scale) : 0;
+  const frameY = animated && avatarState === "thinking" && (frame === 1 || frame === 2) ? -scale : 0;
   for (let y = 0; y < 8; y++) {
     for (let x = 0; x < 8; x++) {
-      const p = grid[y][x];
-      if (!p) continue;
-      const [r, g, b] = palette[p];
+      let pixel = grid[y][x];
+      if (animated && avatarState === "idle" && frame === 3 && y === 2 && pixel === 3) pixel = 1;
+      if (!pixel) continue;
+      const [r, g, b] = palette[pixel];
       ctx.fillStyle = `rgb(${r},${g},${b})`;
-      ctx.fillRect(x * scale, y * scale, scale, scale);
+      ctx.fillRect(margin + x * scale + frameX, margin + y * scale + frameY, scale, scale);
     }
   }
 }
 
-let sessionId = null;
-let selectedAvatar = "sprite-04";
+function setAvatarState(state) {
+  avatarState = state;
+  const canvas = document.getElementById("avatar");
+  if (canvas) canvas.className = `avatar ${state}`;
+}
+
+function paintHero(avatarId) {
+  currentAvatar = avatarId;
+  const meta = AVATARS.find((avatar) => avatar.id === avatarId) || AVATARS[3];
+  const canvas = document.getElementById("avatar");
+  if (canvas?.getContext) drawSprite(canvas, meta.id, meta.color, 8, true);
+}
+
+function startAvatarAnimation() {
+  window.setInterval(() => {
+    avatarFrame += 1;
+    paintHero(currentAvatar);
+  }, 180);
+}
+
+function renderGatewayStatus() {
+  const status = document.getElementById("agent-status");
+  const dot = document.getElementById("status-dot");
+  if (!status || !dot) return;
+  dot.className = "status-dot";
+  if (gatewayStatus?.ok) {
+    dot.classList.add("online");
+    status.textContent = `${t("online")} · ${gatewayStatus.model || "HeyAgent"}`;
+  } else if (gatewayStatus) {
+    dot.classList.add("offline");
+    status.textContent = t("offline");
+  } else {
+    dot.classList.add("offline");
+    status.textContent = t("gatewayOffline");
+  }
+}
 
 async function init() {
   setupTabs();
@@ -118,59 +190,58 @@ async function init() {
   setupOnboard();
   setupMissions();
   setupModelsPanel();
+  setupLocaleSwitch();
   paintHero(selectedAvatar);
+  startAvatarAnimation();
   startApprovalPoll();
-  document.getElementById("locale-select")?.addEventListener("change", (event) => {
-    applyProductLocale(event.target.value);
-  });
-  applyProductLocale("ru");
+
+  const savedLocale = localStorage.getItem(LOCALE_KEY);
+  applyProductLocale(savedLocale || "ru", false);
 
   try {
-    const res = await fetch(`${GATEWAY}/status`);
-    const data = await res.json();
-    applyProductLocale(data.locale);
-    document.getElementById("agent-status").textContent = data.ok
-      ? `Online · ${data.model || ""}`
-      : "Offline";
+    const response = await fetch(`${GATEWAY}/status`);
+    gatewayStatus = await response.json();
+    if (!savedLocale) applyProductLocale(gatewayStatus.locale, false);
+    renderGatewayStatus();
   } catch {
-    document.getElementById("agent-status").textContent = "Gateway offline — run: hey gateway start";
+    gatewayStatus = null;
+    renderGatewayStatus();
   }
 
   try {
-    const res = await fetch(`${GATEWAY}/identity`);
-    const data = await res.json();
+    const response = await fetch(`${GATEWAY}/identity`);
+    const data = await response.json();
     if (data.identity) {
       document.getElementById("agent-name").textContent = data.identity.name;
       paintHero(data.identity.avatarId);
       document.getElementById("onboard").classList.add("hidden");
     } else {
-      document.getElementById("onboard").classList.remove("hidden");
-      document.getElementById("chat").classList.add("hidden");
+      showOnboarding();
     }
   } catch {
-    document.getElementById("onboard").classList.remove("hidden");
+    showOnboarding();
   }
 }
 
-function paintHero(avatarId) {
-  const meta = AVATARS.find((a) => a.id === avatarId) || AVATARS[3];
-  const canvas = document.getElementById("avatar");
-  if (canvas && canvas.getContext) {
-    canvas.className = "avatar idle";
-    drawSprite(canvas, meta.id, meta.color, 8);
-  }
+function setupLocaleSwitch() {
+  document.querySelectorAll("[data-locale]").forEach((button) => {
+    button.addEventListener("click", () => applyProductLocale(button.dataset.locale));
+  });
+}
+
+function showOnboarding() {
+  document.getElementById("onboard").classList.remove("hidden");
+  document.getElementById("chat").classList.add("hidden");
 }
 
 function setupTabs() {
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
-      document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+      document.querySelectorAll(".tab").forEach((item) => item.classList.remove("active"));
       tab.classList.add("active");
+      document.querySelectorAll(".panel").forEach((panel) => panel.classList.add("hidden"));
       const name = tab.dataset.tab;
-      document.querySelectorAll(".panel").forEach((p) => p.classList.add("hidden"));
-      const panel = name === "models" ? "models-panel" : name;
-      document.getElementById(panel)?.classList.remove("hidden");
-      if (name === "chat") document.getElementById("chat").classList.remove("hidden");
+      document.getElementById(name === "models" ? "models-panel" : name)?.classList.remove("hidden");
       if (name === "missions") void refreshMissions();
       if (name === "models") void refreshModels();
     });
@@ -180,19 +251,11 @@ function setupTabs() {
 function setupMissions() {
   document.getElementById("missions-refresh")?.addEventListener("click", () => void refreshMissions());
   document.getElementById("missions-pause")?.addEventListener("click", async () => {
-    await fetch(`${GATEWAY}/missions/pause`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{}",
-    });
+    await fetch(`${GATEWAY}/missions/pause`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
     void refreshMissions();
   });
   document.getElementById("missions-cancel")?.addEventListener("click", async () => {
-    await fetch(`${GATEWAY}/missions/cancel`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{}",
-    });
+    await fetch(`${GATEWAY}/missions/cancel`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
     void refreshMissions();
   });
 }
@@ -200,42 +263,36 @@ function setupMissions() {
 async function refreshMissions() {
   const statusEl = document.getElementById("missions-status");
   const queueEl = document.getElementById("missions-queue");
-  const histEl = document.getElementById("missions-history");
-  if (!statusEl || !queueEl || !histEl) return;
+  const historyEl = document.getElementById("missions-history");
+  if (!statusEl || !queueEl || !historyEl) return;
   try {
     const [missions, status] = await Promise.all([
-      fetch(`${GATEWAY}/missions`).then((r) => r.json()),
-      fetch(`${GATEWAY}/status`).then((r) => r.json()),
+      fetch(`${GATEWAY}/missions`).then((response) => response.json()),
+      fetch(`${GATEWAY}/status`).then((response) => response.json()),
     ]);
     statusEl.textContent = [
-      `Model: ${status.model || "?"}`,
-      `Active UI: ${missions.activeUi || "none"}`,
-      `Pending approvals: ${status.pendingApprovals ?? 0}`,
-      "",
-      "Cron:",
-      missions.cron || "(none)",
+      `${t("model")}: ${status.model || "?"}`,
+      `${t("activeUi")}: ${missions.activeUi || t("none")}`,
+      `${t("pendingApprovals")}: ${status.pendingApprovals ?? 0}`,
+      "", `${t("cron")}:`, missions.cron || `(${t("none")})`,
     ].join("\n");
-    queueEl.innerHTML = "";
-    (missions.queue || []).forEach((m) => {
-      const li = document.createElement("li");
-      li.textContent = `[${m.status}] ${m.harness || "?"} — ${(m.goal || "").slice(0, 80)}`;
-      queueEl.appendChild(li);
-    });
-    if (!(missions.queue || []).length) {
-      queueEl.innerHTML = "<li>Queue empty</li>";
-    }
-    histEl.innerHTML = "";
-    (missions.history || []).forEach((h) => {
-      const li = document.createElement("li");
-      li.textContent = `${(h.at || "").slice(0, 16)} · ${h.harness || "?"} — ${(h.goal || "").slice(0, 70)}`;
-      histEl.appendChild(li);
-    });
-    if (!(missions.history || []).length) {
-      histEl.innerHTML = "<li>No history yet</li>";
-    }
-  } catch (err) {
-    statusEl.textContent = `Gateway offline: ${err.message}`;
+    renderList(queueEl, missions.queue || [], t("queueEmpty"), (mission) =>
+      `[${mission.status}] ${mission.harness || "?"} — ${(mission.goal || "").slice(0, 80)}`);
+    renderList(historyEl, missions.history || [], t("noHistory"), (item) =>
+      `${(item.at || "").slice(0, 16)} · ${item.harness || "?"} — ${(item.goal || "").slice(0, 70)}`);
+  } catch {
+    statusEl.textContent = t("gatewayOffline");
   }
+}
+
+function renderList(element, items, emptyText, format) {
+  element.replaceChildren();
+  const values = items.length ? items : [null];
+  values.forEach((item) => {
+    const li = document.createElement("li");
+    li.textContent = item ? format(item) : emptyText;
+    element.appendChild(li);
+  });
 }
 
 function setupModelsPanel() {
@@ -243,25 +300,23 @@ function setupModelsPanel() {
 }
 
 async function refreshModels() {
-  const el = document.getElementById("model-status");
-  if (!el) return;
+  const element = document.getElementById("model-status");
+  if (!element) return;
   try {
-    const data = await fetch(`${GATEWAY}/models`).then((r) => r.json());
-    const lines = [
-      `Default: ${data.default}`,
-      `Fallbacks: ${(data.fallbacks || []).join(", ") || "(none)"}`,
-      "",
-      "Providers:",
-      ...(data.providers || []).map((p) => `  ${p.hasKey ? "✓" : "·"} ${p.id} — ${p.name}`),
-    ];
-    el.textContent = lines.join("\n");
-  } catch (err) {
-    el.textContent = `Error: ${err.message}`;
+    const data = await fetch(`${GATEWAY}/models`).then((response) => response.json());
+    element.textContent = [
+      `${t("defaultModel")}: ${data.default}`,
+      `${t("fallbacks")}: ${(data.fallbacks || []).join(", ") || `(${t("none")})`}`,
+      "", `${t("providers")}:`,
+      ...(data.providers || []).map((provider) => `  ${provider.hasKey ? "✓" : "·"} ${provider.id} — ${provider.name}`),
+    ].join("\n");
+  } catch (error) {
+    element.textContent = `${t("error")}: ${error.message}`;
   }
 }
 
 function startApprovalPoll() {
-  setInterval(() => void refreshApprovals(), 2500);
+  window.setInterval(() => void refreshApprovals(), 2500);
 }
 
 async function refreshApprovals() {
@@ -269,77 +324,74 @@ async function refreshApprovals() {
   const list = document.getElementById("approvals-list");
   if (!box || !list) return;
   try {
-    const data = await fetch(`${GATEWAY}/approvals`).then((r) => r.json());
+    const data = await fetch(`${GATEWAY}/approvals`).then((response) => response.json());
     const pending = data.pending || [];
-    if (!pending.length) {
-      box.classList.add("hidden");
-      list.innerHTML = "";
-      return;
-    }
-    box.classList.remove("hidden");
-    list.innerHTML = "";
-    pending.forEach((p) => {
+    box.classList.toggle("hidden", !pending.length);
+    list.replaceChildren();
+    pending.forEach((approval) => {
       const card = document.createElement("div");
       card.className = "approval-card";
-      card.innerHTML = `<div><strong>${p.toolName}</strong></div><div>${p.description}</div><pre>${JSON.stringify(p.args || {}, null, 0).slice(0, 200)}</pre>`;
+      const title = document.createElement("strong");
+      title.textContent = approval.toolName;
+      const description = document.createElement("div");
+      description.textContent = approval.description;
+      const args = document.createElement("pre");
+      args.textContent = JSON.stringify(approval.args || {}, null, 0).slice(0, 200);
       const actions = document.createElement("div");
       actions.className = "actions";
-      const yes = document.createElement("button");
-      yes.className = "btn primary";
-      yes.textContent = "Approve";
-      yes.type = "button";
-      yes.onclick = () => void decideApproval(p.id, true);
-      const no = document.createElement("button");
-      no.className = "btn danger";
-      no.textContent = "Deny";
-      no.type = "button";
-      no.onclick = () => void decideApproval(p.id, false);
-      actions.append(yes, no);
-      card.appendChild(actions);
+      actions.append(
+        approvalButton(t("approve"), "btn primary", () => decideApproval(approval.id, true)),
+        approvalButton(t("deny"), "btn danger", () => decideApproval(approval.id, false)),
+      );
+      card.append(title, description, args, actions);
       list.appendChild(card);
     });
   } catch {
-    /* offline */
+    // Gateway can be offline while the desktop shell remains usable.
   }
+}
+
+function approvalButton(label, className, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = className;
+  button.textContent = label;
+  button.onclick = () => void onClick();
+  return button;
 }
 
 async function decideApproval(id, approve) {
   await fetch(`${GATEWAY}/approvals/${id}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ approve }),
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ approve }),
   });
   void refreshApprovals();
 }
 
 function setupAvatarGrid() {
   const grid = document.getElementById("avatar-grid");
-  AVATARS.forEach((a) => {
-    const wrap = document.createElement("button");
-    wrap.type = "button";
-    wrap.className = `avatar-option${a.id === selectedAvatar ? " selected" : ""}`;
-    wrap.title = a.label;
+  AVATARS.forEach((avatar) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `avatar-option${avatar.id === selectedAvatar ? " selected" : ""}`;
+    button.title = avatar.label;
     const canvas = document.createElement("canvas");
-    drawSprite(canvas, a.id, a.color, 5);
-    wrap.appendChild(canvas);
-    wrap.addEventListener("click", () => {
-      selectedAvatar = a.id;
-      grid.querySelectorAll(".avatar-option").forEach((o) => o.classList.remove("selected"));
-      wrap.classList.add("selected");
-      paintHero(a.id);
+    drawSprite(canvas, avatar.id, avatar.color, 5);
+    button.appendChild(canvas);
+    button.addEventListener("click", () => {
+      selectedAvatar = avatar.id;
+      grid.querySelectorAll(".avatar-option").forEach((item) => item.classList.remove("selected"));
+      button.classList.add("selected");
+      paintHero(avatar.id);
     });
-    grid.appendChild(wrap);
+    grid.appendChild(button);
   });
 }
 
 function setupOnboard() {
-  document.getElementById("onboard-btn").addEventListener("click", async () => {
+  document.getElementById("onboard-btn").addEventListener("click", () => {
     const name = document.getElementById("name-input").value.trim();
-    const text = uiText();
-    if (!name) return alert(text.enterName);
-    alert(
-      `${text.terminalSetup}:\nhey onboard --locale ${productLocale}\n\n${text.name}: ${name}\n${text.avatar}: ${selectedAvatar}`,
-    );
+    if (!name) return alert(t("enterName"));
+    alert(`${t("terminalSetup")}:\nhey onboard --locale ${productLocale}\n\n${t("name")}: ${name}\n${t("avatar")}: ${selectedAvatar}`);
     document.getElementById("agent-name").textContent = name;
     paintHero(selectedAvatar);
     document.getElementById("onboard").classList.add("hidden");
@@ -351,42 +403,40 @@ function setupChat() {
   const form = document.getElementById("chat-form");
   const input = document.getElementById("chat-input");
   const messages = document.getElementById("messages");
-  const avatar = document.getElementById("avatar");
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  const send = document.getElementById("chat-send");
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
     const text = input.value.trim();
     if (!text) return;
     input.value = "";
-
     appendMsg(messages, "user", text);
-    avatar.classList.remove("idle");
-    avatar.classList.add("thinking");
-
+    setAvatarState("thinking");
+    send.disabled = true;
     try {
-      const res = await fetch(`${GATEWAY}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch(`${GATEWAY}/chat`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, sessionId }),
       });
-      const data = await res.json();
+      const data = await response.json();
       if (data.error) throw new Error(data.error);
       sessionId = data.sessionId;
+      setAvatarState("done");
       appendMsg(messages, "assistant", data.response);
-    } catch (err) {
-      appendMsg(messages, "assistant", `Error: ${err.message}`);
+    } catch (error) {
+      appendMsg(messages, "assistant", `${t("error")}: ${error.message}`);
     } finally {
-      avatar.classList.remove("thinking", "working");
-      avatar.classList.add("idle");
+      send.disabled = false;
+      window.setTimeout(() => setAvatarState("idle"), 520);
     }
   });
 }
 
 function appendMsg(container, role, text) {
-  const el = document.createElement("div");
-  el.className = `msg ${role}`;
-  el.textContent = text;
-  container.appendChild(el);
+  document.getElementById("chat-empty")?.classList.add("hidden");
+  const element = document.createElement("div");
+  element.className = `msg ${role}`;
+  element.textContent = text;
+  container.appendChild(element);
   container.scrollTop = container.scrollHeight;
 }
 

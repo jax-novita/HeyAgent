@@ -1,79 +1,117 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
   <title>HeyAgent</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
 </head>
 <body>
   <div id="app">
-    <header>
-      <canvas id="avatar" class="avatar idle" width="64" height="64" aria-hidden="true"></canvas>
+    <header class="hero">
+      <div class="topbar">
+        <div class="brand" aria-label="HeyAgent">
+          <span class="brand-mark">H</span>
+          <span>HeyAgent</span>
+        </div>
+        <div class="locale-switch" role="group" aria-label="Interface language">
+          <button type="button" data-locale="ru">RU</button>
+          <button type="button" data-locale="en">EN</button>
+        </div>
+      </div>
+
+      <div class="avatar-stage">
+        <span class="pixel-particle particle-one"></span>
+        <span class="pixel-particle particle-two"></span>
+        <span class="pixel-particle particle-three"></span>
+        <canvas id="avatar" class="avatar idle" width="96" height="96" aria-hidden="true"></canvas>
+      </div>
       <h1 id="agent-name">HeyAgent</h1>
-      <p id="agent-status">Connecting…</p>
+      <div class="status-line">
+        <span id="status-dot" class="status-dot connecting"></span>
+        <span id="agent-status" data-i18n="connecting">Подключение…</span>
+      </div>
     </header>
 
-    <section id="onboard" class="panel hidden">
-      <label for="locale-select" id="locale-label">Language / Язык</label>
-      <select id="locale-select">
-        <option value="ru">Русский</option>
-        <option value="en">English</option>
-      </select>
-      <h2 id="onboard-title">Name your agent</h2>
-      <input id="name-input" type="text" placeholder="Pixel" maxlength="24" />
-      <h3 id="avatar-title">Pick an avatar</h3>
-      <div id="avatar-grid" class="avatar-grid"></div>
-      <button id="onboard-btn" class="btn primary">Continue</button>
-    </section>
+    <main class="content">
+      <section id="onboard" class="panel surface hidden">
+        <p class="eyebrow" data-i18n="firstLaunch">ПЕРВЫЙ ЗАПУСК</p>
+        <h2 data-i18n="onboardTitle">Назовите агента</h2>
+        <p class="section-copy" data-i18n="onboardCopy">Создайте персонального помощника — настройки можно изменить позже.</p>
+        <label class="field-label" for="name-input" data-i18n="agentName">Имя агента</label>
+        <input id="name-input" type="text" placeholder="Pixel" maxlength="24" />
+        <h3 data-i18n="avatarTitle">Выберите аватар</h3>
+        <div id="avatar-grid" class="avatar-grid"></div>
+        <button id="onboard-btn" class="btn primary wide" data-i18n="continue">Продолжить</button>
+      </section>
 
-    <section id="chat" class="panel">
-      <div id="messages" class="messages"></div>
-      <form id="chat-form" class="chat-form">
-        <input id="chat-input" type="text" placeholder="Ask anything…" autocomplete="off" />
-        <button id="chat-send" type="submit" class="btn">Send</button>
-      </form>
-    </section>
+      <section id="chat" class="panel chat-panel">
+        <div id="messages" class="messages" aria-live="polite">
+          <div id="chat-empty" class="empty-state">
+            <div class="empty-icon">›_</div>
+            <h2 data-i18n="readyTitle">Готов к работе</h2>
+            <p data-i18n="readyCopy">Спросите что угодно или поручите задачу.</p>
+          </div>
+        </div>
+        <form id="chat-form" class="chat-form">
+          <input id="chat-input" type="text" data-i18n-placeholder="chatPlaceholder" placeholder="Напишите запрос…" autocomplete="off" />
+          <button id="chat-send" type="submit" class="send-btn" data-i18n-title="send" title="Отправить">
+            <span data-i18n="send">Отправить</span>
+            <span aria-hidden="true">↗</span>
+          </button>
+        </form>
+      </section>
+
+      <section id="missions" class="panel hidden">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow" data-i18n="automation">АВТОМАТИЗАЦИЯ</p>
+            <h2 data-i18n="missions">Задачи</h2>
+          </div>
+          <button id="missions-refresh" class="icon-btn" type="button" data-i18n-title="refresh" title="Обновить">↻</button>
+        </div>
+        <div class="missions-actions">
+          <button id="missions-pause" class="btn" type="button" data-i18n="pause">Пауза</button>
+          <button id="missions-cancel" class="btn danger" type="button" data-i18n="cancelAll">Отменить все</button>
+        </div>
+        <pre id="missions-status" class="data-card"></pre>
+        <h3 data-i18n="queue">Очередь</h3>
+        <ul id="missions-queue" class="mission-list"></ul>
+        <h3 data-i18n="history">История</h3>
+        <ul id="missions-history" class="mission-list"></ul>
+        <div id="approvals-box" class="approvals hidden">
+          <h3 data-i18n="safePreview">Безопасное подтверждение</h3>
+          <div id="approvals-list"></div>
+        </div>
+      </section>
+
+      <section id="models-panel" class="panel hidden">
+        <p class="eyebrow" data-i18n="intelligence">ИНТЕЛЛЕКТ</p>
+        <h2 data-i18n="models">Модели</h2>
+        <p class="section-copy"><span data-i18n="configureTerminal">Настройте через терминал:</span> <code>hey models auth openai</code></p>
+        <button id="test-model" class="btn primary" data-i18n="testConnection">Проверить подключение</button>
+        <pre id="model-status" class="data-card"></pre>
+      </section>
+
+      <section id="connect" class="panel hidden">
+        <p class="eyebrow" data-i18n="workspace">РАБОЧЕЕ ПРОСТРАНСТВО</p>
+        <h2 data-i18n="services">Сервисы</h2>
+        <div class="connect-card">
+          <span class="connect-icon">⌁</span>
+          <p data-i18n="connectCopy">Подключайте Google Workspace, Notion и другие сервисы из терминала.</p>
+        </div>
+        <ul id="integration-list" class="integration-list"></ul>
+        <p class="hint"><span data-i18n="run">Выполните:</span> <code>hey connect google</code> <span data-i18n="or">или</span> <code>hey connect notion</code>.</p>
+      </section>
+    </main>
 
     <nav class="tabs">
-      <button data-tab="chat" class="tab active">Chat</button>
-      <button data-tab="missions" class="tab">Missions</button>
-      <button data-tab="models" class="tab">Models</button>
-      <button data-tab="connect" class="tab">Connect</button>
+      <button data-tab="chat" class="tab active"><span class="tab-icon">◌</span><span data-i18n="chat">Чат</span></button>
+      <button data-tab="missions" class="tab"><span class="tab-icon">✓</span><span data-i18n="missions">Задачи</span></button>
+      <button data-tab="models" class="tab"><span class="tab-icon">◇</span><span data-i18n="models">Модели</span></button>
+      <button data-tab="connect" class="tab"><span class="tab-icon">⌁</span><span data-i18n="connect">Связи</span></button>
     </nav>
-
-    <section id="missions" class="panel hidden">
-      <h2>Missions</h2>
-      <div class="missions-actions">
-        <button id="missions-refresh" class="btn" type="button">Refresh</button>
-        <button id="missions-pause" class="btn" type="button">Pause</button>
-        <button id="missions-cancel" class="btn danger" type="button">Cancel all</button>
-      </div>
-      <pre id="missions-status" class="missions-pre"></pre>
-      <h3>Queue</h3>
-      <ul id="missions-queue" class="mission-list"></ul>
-      <h3>History</h3>
-      <ul id="missions-history" class="mission-list"></ul>
-      <div id="approvals-box" class="approvals hidden">
-        <h3>Safe preview</h3>
-        <div id="approvals-list"></div>
-      </div>
-    </section>
-
-    <section id="models-panel" class="panel hidden">
-      <h2>Models</h2>
-      <p>Configure via terminal: <code>hey models auth openai</code></p>
-      <button id="test-model" class="btn">Test connection</button>
-      <pre id="model-status"></pre>
-    </section>
-
-    <section id="connect" class="panel hidden">
-      <h2>Services</h2>
-      <ul id="integration-list" class="integration-list"></ul>
-      <p class="hint">Run <code>hey connect google</code> or <code>hey connect notion</code> in terminal.</p>
-    </section>
   </div>
   <script src="app.js"></script>
 </body>

@@ -12,9 +12,13 @@ let isQuitting = false;
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 420,
-    height: 640,
+    width: 480,
+    height: 720,
+    minWidth: 420,
+    minHeight: 620,
     show: false,
+    autoHideMenuBar: true,
+    backgroundColor: "#070a12",
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -22,6 +26,7 @@ function createWindow(): void {
     title: "HeyAgent",
   });
 
+  mainWindow.setMenuBarVisibility(false);
   mainWindow.once("ready-to-show", () => mainWindow?.show());
   void mainWindow.loadFile(join(__dirname, "ui", "index.html"));
   mainWindow.on("close", (e) => {
