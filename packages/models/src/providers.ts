@@ -202,6 +202,19 @@ export const PROVIDERS: ModelProvider[] = [
     ],
   },
   {
+    id: "novita",
+    name: "Novita AI",
+    authType: "api_key",
+    api: "openai-completions",
+    baseUrl: "https://api.novita.ai/openai/v1",
+    envKey: "NOVITA_API_KEY",
+    compat: { maxTokensField: "max_tokens" },
+    models: [
+      { id: "deepseek/deepseek-v3.1" },
+      { id: "meta-llama/llama-3.3-70b-instruct" },
+    ],
+  },
+  {
     id: "groq",
     name: "Groq",
     authType: "api_key",
