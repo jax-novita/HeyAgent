@@ -210,8 +210,9 @@ export const PROVIDERS: ModelProvider[] = [
     envKey: "NOVITA_API_KEY",
     compat: { maxTokensField: "max_tokens" },
     models: [
-      { id: "deepseek/deepseek-v3.1" },
-      { id: "meta-llama/llama-3.3-70b-instruct" },
+      { id: "moonshotai/kimi-k3" },
+      { id: "zai-org/glm-5.2" },
+      { id: "deepseek/deepseek-v4-flash-0731" },
     ],
   },
   {
