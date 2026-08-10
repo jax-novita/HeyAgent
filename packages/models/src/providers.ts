@@ -209,11 +209,7 @@ export const PROVIDERS: ModelProvider[] = [
     baseUrl: "https://api.novita.ai/openai/v1",
     envKey: "NOVITA_API_KEY",
     compat: { maxTokensField: "max_tokens" },
-    models: [
-      { id: "moonshotai/kimi-k3" },
-      { id: "zai-org/glm-5.2" },
-      { id: "deepseek/deepseek-v4-flash-0731" },
-    ],
+    models: [{ id: "deepseek/deepseek-v4-pro" }],
   },
   {
     id: "groq",
